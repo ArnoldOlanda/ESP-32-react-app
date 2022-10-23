@@ -1,6 +1,6 @@
 import React, { useContext, useState } from 'react'
 import styled from 'styled-components'
-import {NavLink, useNavigate} from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { StoreContext } from '../context/StoreProvider'
 import url_base from "../config/variables"
@@ -9,108 +9,148 @@ import { useForm } from '../hooks/useForm';
 import { types } from '../context/StoreReducer';
 
 export const Register = () => {
-    const navigate = useNavigate();
-    const [store, dispatch] = useContext(StoreContext);
-    const [isLoading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const [store, dispatch] = useContext(StoreContext);
+  const [isLoading, setLoading] = useState(false);
 
-    const {user, password, password2, msg, onInputChange, onSetNewState }= useForm({
-      user: '', 
-      password: '', 
-      password2: '', 
-      msg:''
-    });
+  const { user, password, password2, msg, onInputChange, onSetNewState } = useForm({
+    user: '',
+    password: '',
+    password2: '',
+    msg: ''
+  });
 
-    
-    const onPressRegister = async () => {
-      
-      if(user=='' || password=='' || password2=='') {
-        onSetNewState('msg','*Debe llenar todos los campos')
-        return false;
-      }
-      if(password.length<6){
-        onSetNewState('msg','La contraseña debe ser mayor a 6 caracteres')
-        return false;
-      }
-      if(password != password2){
-        onSetNewState('msg','*Las contraseñas deben ser iguales')
-        return false;
-      }
 
-      const body = {
-        user: user,
-        password: password,
-        type: true
-      }
-      setLoading(true)
-      const response = await fetch(`${ url_base }/api/users`,{
-          method:'POST',
-          body:JSON.stringify(body),
-          headers: { 'Content-Type': 'application/json' }
+  const onPressRegister = async () => {
+
+    if (user == '' || password == '' || password2 == '') {
+      onSetNewState('msg', '*Debe llenar todos los campos')
+      return false;
+    }
+    if (password.length < 6) {
+      onSetNewState('msg', 'La contraseña debe ser mayor a 6 caracteres')
+      return false;
+    }
+    if (password != password2) {
+      onSetNewState('msg', '*Las contraseñas deben ser iguales')
+      return false;
+    }
+
+    const body = {
+      user: user,
+      password: password,
+      type: true
+    }
+    setLoading(true)
+    const response = await fetch(`${url_base}/api/users`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+      headers: { 'Content-Type': 'application/json' }
+    })
+
+    if (response.status == 404) {
+      setLoading(false)
+      alert("Error: Server not found")
+
+    } else if (response.status == 400) {
+      setLoading(false)
+      const data = await response.json()
+      onSetNewState('msg', data.msg)
+      return
+
+    } else {
+
+      //setLoading(true)
+      const response = await fetch(`${url_base}/api/auth/login`, {
+        method: 'POST',
+        body: JSON.stringify({ user, password }),
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json'
+        },
       })
-      
-      if(response.status == 404){
+
+      if (response.status == 404) {
         setLoading(false)
         alert("Error: Server not found")
-        
+
       }
-      else if (response.status == 400){
+      else if (response.status == 400) {
+
         setLoading(false)
         const data = await response.json()
-        onSetNewState('msg',data.msg)  
+        onSetNewState('msg', `*${data.msg}`)
         return
 
-      } else{
-        navigate('/MainPage');
+      } else {
+
+        setLoading(false)
+        const data = await response.json();
+        const { user, cameras, token, users } = data;
         dispatch({
-          type: types.Register,
+          type: types.Login,
           body: {
-            user:user,  
-            type: true
-        }});
+            user: user.user,
+            cameras,
+            token,
+            users,
+            type: user.type_
+          }
+        });
+
+        navigate('/MainPage');
+        // dispatch({
+        //   type: types.Register,
+        //   body: {
+        //     user:user,  
+        //     type: true
+        // }});
       }
-      
+
     }
-  
-    return (
-      <Container>
-        <Box>
-          <ArrowBack to="/login"> 
-            <IoIosArrowRoundBack style={{color: 'black', height: '30px', width: '30px', position: 'absolute', left: 15, top: 15}}/>
-          </ArrowBack>
-          <Title>Crear Cuenta</Title>
-          <Subtitle>Creará una cuenta de administrador</Subtitle>
-          <div style={{display: 'block', textAlign: 'center'}}>
 
-            <InputLogin 
-            onChange={ onInputChange } 
-            placeholder="Usuario" 
-            name="user" 
+  }
+
+  return (
+    <Container>
+      <Box>
+        <ArrowBack to="/login">
+          <IoIosArrowRoundBack style={{ color: 'black', height: '30px', width: '30px', position: 'absolute', left: 15, top: 15 }} />
+        </ArrowBack>
+        <Title>Crear Cuenta</Title>
+        <Subtitle>Creará una cuenta de administrador</Subtitle>
+        <div style={{ display: 'block', textAlign: 'center' }}>
+
+          <InputLogin
+            onChange={onInputChange}
+            placeholder="Usuario"
+            name="user"
             required />
 
-            <InputLogin 
-            onChange={ onInputChange } 
-            type="password" 
-            placeholder="Constraseña" 
-            name="password"  
+          <InputLogin
+            onChange={onInputChange}
+            type="password"
+            placeholder="Constraseña"
+            name="password"
             required />
 
-            <InputLogin 
-            onChange={ onInputChange } 
-            type="password" 
-            placeholder="Confirmar contraseña" 
-            name="password2" 
+          <InputLogin
+            onChange={onInputChange}
+            type="password"
+            placeholder="Confirmar contraseña"
+            name="password2"
             required />
 
-            <ButtonLogin type ="submit" value="Aceptar" onClick={onPressRegister} />
+          <ButtonLogin type="submit" value="Aceptar" onClick={onPressRegister} />
 
-          </div>
-          <Error>{msg}</Error>
-        </Box>
-        {
-          isLoading ? <LoadingScreen/>: <></>
-        }
-      </Container>
-    )
+        </div>
+        <Error>{msg}</Error>
+      </Box>
+      {
+        isLoading ? <LoadingScreen /> : <></>
+      }
+    </Container>
+  )
 }
 
 const Container = styled.div`
@@ -119,7 +159,7 @@ const Container = styled.div`
   height: 100vh;
 `
 
-const Box= styled.div`
+const Box = styled.div`
   position: absolute;
   top: 50%;
   left: 50%;
@@ -149,7 +189,7 @@ const Subtitle = styled.p`
 
 `
 
-const InputLogin= styled.input`
+const InputLogin = styled.input`
   width: 100%;
   padding: 10px;
   box-sizing: border-box;
@@ -165,7 +205,7 @@ const InputLogin= styled.input`
   }
   
 `
-const ButtonLogin= styled.input`
+const ButtonLogin = styled.input`
   height: 49px;
   width: 100px;
   color: white;
